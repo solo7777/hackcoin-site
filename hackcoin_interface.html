@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HackCoin Interface</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://i.postimg.cc/HnRJhncv/Google-AI-Studio-2025-07-11-T13-54-39-126-Z.png"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        text-align: center;
+      }
+      input {
+        margin: 5px;
+        padding: 5px;
+      }
+      button {
+        margin: 5px;
+        padding: 7px 15px;
+      }
+      .section {
+        margin-top: 20px;
+      }
+      #status,
+      #balance,
+      #owner,
+      #txLink {
+        font-weight: bold;
+        margin-top: 10px;
+      }
+      img.logo {
+        width: 100px;
+        height: auto;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      class="logo"
+      src="https://i.postimg.cc/nc2gBmm1/465354209-e4e4431c-e21d-48b6-a0b3-7f58249ea4a6.png"
+      alt="HackCoin Logo"
+    />
+    <h1>HackCoin Interaction</h1>
+
+    <button onclick="connectWallet()">🔗 Connect Wallet</button>
+    <p id="status"></p>
+    <p id="txLink"></p>
+
+    <div class="section">
+      <input
+        id="mintAmount"
+        type="number"
+        min="0"
+        step="any"
+        placeholder="Amount to mint"
+      />
+      <button onclick="mint()">🪙 Mint</button>
+    </div>
+
+    <div class="section">
+      <input
+        id="burnAmount"
+        type="number"
+        min="0"
+        step="any"
+        placeholder="Amount to burn"
+      />
+      <button onclick="burn()">🔥 Burn</button>
+    </div>
+
+    <div class="section">
+      <button onclick="checkBalance()">📊 Check Balance</button>
+      <p id="balance"></p>
+    </div>
+
+    <div class="section">
+      <button onclick="getOwner()">👑 Get Owner</button>
+      <p id="owner"></p>
+    </div>
+
+    <script>
+      const contractAddress = "0x1Fa5036a3df254Ead1A5930BD208Ac760b1C2010";
+      const contractABI = [
+        {
+          inputs: [
+            { internalType: "address", name: "to", type: "address" },
+            { internalType: "uint256", name: "amount", type: "uint256" },
+          ],
+          name: "mint",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [{ internalType: "uint256", name: "value", type: "uint256" }],
+          name: "burn",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [{ internalType: "address", name: "", type: "address" }],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            { internalType: "address", name: "account", type: "address" },
+          ],
+          name: "balanceOf",
+          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
+      let signer;
+      let contract;
+
+      async function connectWallet() {
+        if (!window.ethereum) return alert("Install MetaMask first!");
+
+        const chainIdSepolia = "0xaa36a7";
+        try {
+          const currentChain = await ethereum.request({
+            method: "eth_chainId",
+          });
+          if (currentChain !== chainIdSepolia) {
+            await switchToSepolia();
+          }
+
+          await ethereum.request({ method: "eth_requestAccounts" });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          signer = provider.getSigner();
+          contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+          document.getElementById("status").innerText = "✅ Wallet connected.";
+        } catch (err) {
+          document.getElementById("status").innerText = `❌ ${err.message}`;
+        }
+      }
+
+      async function switchToSepolia() {
+        try {
+          await ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0xaa36a7" }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            alert("Add Sepolia to MetaMask manually.");
+          } else {
+            throw switchError;
+          }
+        }
+      }
+
+      function isValidAmount(value) {
+        return value !== "" && !isNaN(value) && Number(value) > 0;
+      }
+
+      async function mint() {
+        const amount = document.getElementById("mintAmount").value.trim();
+        if (!contract) return alert("Connect wallet first.");
+        if (!isValidAmount(amount))
+          return alert("Enter a valid amount to mint.");
+
+        try {
+          const tx = await contract.mint(
+            await signer.getAddress(),
+            ethers.utils.parseUnits(amount, 18)
+          );
+          document.getElementById("status").innerText = "⏳ Minting...";
+          await tx.wait();
+          document.getElementById(
+            "status"
+          ).innerText = `✅ Minted ${amount} HKC.`;
+          document.getElementById(
+            "txLink"
+          ).innerHTML = `<a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">🔍 View on Etherscan</a>`;
+          document.getElementById("mintAmount").value = "";
+        } catch (err) {
+          document.getElementById("status").innerText = `❌ ${err.message}`;
+        }
+      }
+
+      async function burn() {
+        const amount = document.getElementById("burnAmount").value.trim();
+        if (!contract) return alert("Connect wallet first.");
+        if (!isValidAmount(amount))
+          return alert("Enter a valid amount to burn.");
+
+        try {
+          const tx = await contract.burn(ethers.utils.parseUnits(amount, 18));
+          document.getElementById("status").innerText = "⏳ Burning...";
+          await tx.wait();
+          document.getElementById(
+            "status"
+          ).innerText = `🔥 Burned ${amount} HKC.`;
+          document.getElementById(
+            "txLink"
+          ).innerHTML = `<a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">🔍 View on Etherscan</a>`;
+          document.getElementById("burnAmount").value = "";
+        } catch (err) {
+          document.getElementById("status").innerText = `❌ ${err.message}`;
+        }
+      }
+
+      async function checkBalance() {
+        if (!contract) return alert("Connect wallet first.");
+        try {
+          const address = await signer.getAddress();
+          const balance = await contract.balanceOf(address);
+          document.getElementById(
+            "balance"
+          ).innerText = `💰 Balance: ${ethers.utils.formatUnits(
+            balance,
+            18
+          )} HKC`;
+        } catch (err) {
+          document.getElementById("balance").innerText = `❌ ${err.message}`;
+        }
+      }
+
+      async function getOwner() {
+        if (!contract) return alert("Connect wallet first.");
+        try {
+          const owner = await contract.owner();
+          document.getElementById("owner").innerText = `👑 Owner: ${owner}`;
+        } catch (err) {
+          document.getElementById("owner").innerText = `❌ ${err.message}`;
+        }
+      }
+    </script>
+  </body>
+</html>
