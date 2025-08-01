@@ -1,4 +1,4 @@
-const contractAddress = "0x1Fa5036a3df254Ead1A5930BD208Ac760b1C2010";
+const contractAddress = "0x25A0FDdad8f33b2E46ffD72f2cb6705386CD5363";
 const contractABI = [
   // Mint
   {
