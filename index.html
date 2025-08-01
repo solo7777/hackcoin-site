@@ -86,7 +86,9 @@
     </div>
 
     <script>
-      const contractAddress = "0xb47e41F6BE46dB20d55eE2d35AfEd227e9178010";
+      const contractAddress = "0x1Fa5036a3df254Ead1A5930BD208Ac760b1C2010";
+      const ownerAddress = "0xb47e41F6BE46dB20d55eE2d35AfEd227e9178010";
+
       const contractABI = [
         {
           inputs: [
@@ -176,14 +178,14 @@
 
         try {
           const tx = await contract.mint(
-            await signer.getAddress(),
+            ownerAddress,
             ethers.utils.parseUnits(amount, 18)
           );
           document.getElementById("status").innerText = "⏳ Minting...";
           await tx.wait();
           document.getElementById(
             "status"
-          ).innerText = `✅ Minted ${amount} HKC.`;
+          ).innerText = `✅ Minted ${amount} HKC to ${ownerAddress}.`;
           document.getElementById(
             "txLink"
           ).innerHTML = `<a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">🔍 View on Etherscan</a>`;
