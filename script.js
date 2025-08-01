@@ -44,13 +44,11 @@ async function connectWallet() {
 
 async function mint() {
   const amount = document.getElementById("mintAmount").value;
-  const ownerAddress = "0xb47e41F6BE46dB20d55eE2d35AfEd227e9178010"; // 🔁 нова адреса
-
   if (!contract) return alert("Connect wallet first.");
   try {
-    const tx = await contract.mint(ownerAddress, ethers.utils.parseUnits(amount, 18));
+    const tx = await contract.mint(await signer.getAddress(), ethers.utils.parseUnits(amount, 18));
     await tx.wait();
-    document.getElementById("status").innerText = `✅ Minted ${amount} HackCoin to ${ownerAddress}.`;
+    document.getElementById("status").innerText = `✅ Minted ${amount} HackCoin.`;
   } catch (err) {
     document.getElementById("status").innerText = `❌ ${err.message}`;
   }
